@@ -1,4 +1,10 @@
 public class DES {
+    private int[] key;
+
+    public DES() {
+        key = new int[64];
+    }
+
     private static final int[] IP = {
             58, 50, 42, 34, 26, 18, 10, 2,
             60, 52, 44, 36, 28, 20, 12, 4,
@@ -129,12 +135,85 @@ public class DES {
             }
     };
 
-    public static String encrypt(String plainText, String key) {
-        return "encrypted";
+    private int[] permute(int[] input, int[] table, int size) {
+        int [] output = new int[size];
+        for (int i = 0; i < size; i++) {
+            output[i] = input[table[i] - 1];
+        }
+        return output;
     }
 
-    public static String decrypt(String cipherText, String key) {
-        return "decrypted";
+    private int[] leftShift(int[] input, int shifts){
+        int[] output = new int[input.length];
+        for (int i = 0; i < input.length - shifts; i++) {
+            output[i] = input[i + shifts];
+        }
+        for (int i = input.length - shifts; i < input.length; i++) {
+            output[i] = input[i - (input.length - shifts)];
+        }
+        return output;
+    }
+
+    private int[][] generateKeys(int[] key){
+        int[] permutedKey = permute(key, PC1,64);
+        int[] left = new int[28];
+        int[] right = new int[28];
+        System.arraycopy(permutedKey,0,left,0,28);
+        System.arraycopy(permutedKey,0,right,0,28);
+
+        int[][] keys = new int[16][48];
+
+        for(int i=0;i<16;i++){
+            left = leftShift(left, SHIFTS[i]);
+            right = leftShift(right, SHIFTS[i]);
+            int[] combined = new int[56];
+            System.arraycopy(left,0,combined,0,28);
+            System.arraycopy(right,0,combined,28,28);
+            keys[i] = permute(combined, PC2, 48);
+        }
+
+        return keys;
+    }
+
+    private int[] feistel(int[] input, int[] key){
+        int[] extended = permute(input, E, 48);
+
+        int[] xored = xor(extended, key);
+
+        // 3. S-boxy (substytucja)
+        int[] sBoxOutput = new int[32];
+        int sBoxOutputIndex = 0;
+
+        for (int i = 0; i < 8; i++) { // 8 S-boxów
+            // Pobieramy 6-bitowy fragment
+            int row = (xored[i*6] << 1) | xored[i*6 + 5]; // Pierwszy i ostatni bit to indeks wiersza
+            int col = (xored[i*6 + 1] << 3) | (xored[i*6 + 2] << 2) | (xored[i*6 + 3] << 1) | xored[i*6 + 4]; // Środkowe 4 bity to indeks kolumny
+
+            // Pobieramy wartość z S-boxa (od 0 do 15)
+            int sBoxValue = S_BOXES[i][row][col];
+
+            // Konwertujemy wartość na 4 bity i dodajemy do wyniku
+            for (int j = 3; j >= 0; j--) {
+                sBoxOutput[sBoxOutputIndex++] = (sBoxValue >> j) & 1;
+            }
+        }
+
+        // 4. Permutacja P
+        int[] result = new int[32];
+        for (int i = 0; i < 32; i++) {
+            result[i] = sBoxOutput[P[i] - 1]; // -1 bo indeksy w tablicy zaczynają się od 0
+        }
+
+        return result;
+
+    }
+
+    private int[] xor(int[] a, int[] b){
+        int[] result = new int[a.length];
+        for(int i=0;i<a.length;i++){
+            result[i] = a[i] ^ b[i];
+        }
+        return result;
     }
 
     public static void main(String[] args) {
