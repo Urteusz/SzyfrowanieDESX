@@ -1,9 +1,64 @@
+import java.math.BigInteger;
+
 public class DES {
+    private int[] input;
     private int[] key;
 
-    public DES() {
-        key = new int[64];
+    public DES(String input, String k) {
+        this.key = hexToBinaryArray(k);
+        this.input = stringToBinaryArray(input);
     }
+
+    public static int[] hexToBinaryArray(String hexString) {
+        String binaryString = new BigInteger(hexString, 16).toString(2);
+
+        while (binaryString.length() % 8 != 0) {
+            binaryString = "0" + binaryString;
+        }
+
+        int[] binaryArray = new int[binaryString.length()];
+        for (int i = 0; i < binaryString.length(); i++) {
+            binaryArray[i] = Character.getNumericValue(binaryString.charAt(i));
+        }
+
+        return binaryArray;
+    }
+
+    public static int[] stringToBinaryArray(String input) {
+        int[] bitArray = new int[64];
+
+        // Konwersja każdego znaku na jego reprezentację binarną
+        for (int i = 0; i < Math.min(input.length(), 8); i++) {
+            char c = input.charAt(i);
+
+            // Konwersja znaku na 8 bitów
+            for (int j = 0; j < 8; j++) {
+                bitArray[i * 8 + j] = (c >> (7 - j)) & 1;
+            }
+        }
+
+        return bitArray;
+    }
+    public static String binaryArrayToString(int[] bitArray) {
+        StringBuilder result = new StringBuilder();
+
+        // Przetwarzamy tablicę po 8 bitów (1 znak ASCII)
+        for (int i = 0; i < 64; i += 8) {
+            int asciiValue = 0;
+
+            // Konwersja 8 bitów na wartość dziesiętną
+            for (int j = 0; j < 8; j++) {
+                asciiValue = (asciiValue << 1) | bitArray[i + j];
+            }
+
+            // Dodajemy znak do wynikowego ciągu
+            result.append((char) asciiValue);
+        }
+
+        return result.toString();
+    }
+
+
 
     private static final int[] IP = {
             58, 50, 42, 34, 26, 18, 10, 2,
@@ -155,11 +210,11 @@ public class DES {
     }
 
     private int[][] generateKeys(int[] key){
-        int[] permutedKey = permute(key, PC1,64);
+        int[] permutedKey = permute(key, PC1,56);
         int[] left = new int[28];
         int[] right = new int[28];
         System.arraycopy(permutedKey,0,left,0,28);
-        System.arraycopy(permutedKey,0,right,0,28);
+        System.arraycopy(permutedKey,28,right,0,28);
 
         int[][] keys = new int[16][48];
 
