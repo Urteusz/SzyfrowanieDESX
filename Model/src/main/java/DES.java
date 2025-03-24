@@ -216,7 +216,74 @@ public class DES {
         return result;
     }
 
-    public static void main(String[] args) {
+    public int[] encrypt(){
+        int[] input = this.input;
+        int[] key = this.key;
+        int[] input_permuted = permute(input, IP, 64);
+      int[] left = new int[32];
+      int[] right = new int[32];
+      System.arraycopy(input_permuted,0,left,0,32);
+      System.arraycopy(input_permuted,32,right,0,32);
+      int[][] keys = generateKeys(key);
+      for(int i=0; i<16; i++){
+          int[] temp = right;
+          right = xor(left, feistel(right, keys[i]));
+          left = temp;
+      }
+      int [] output = new int[64];
+      System.arraycopy(right,0,output,0,32);
+      System.arraycopy(left,0,output,32,32);
+      return permute(output, FP, 64);
+    }
 
+
+//    public static void main(String[] args) {
+//        DES des = new DES();
+//        int[] output = des.encrypt();
+//        for (int i = 0; i < 64; i++) {
+//            System.out.print(output[i]);
+//        }
+//        System.out.println();
+//    }
+
+
+    public int[] decrypt() {
+        int[] input_permuted = permute(input, IP, 64);
+        int[] left = new int[32];
+        int[] right = new int[32];
+        System.arraycopy(input_permuted, 0, left, 0, 32);
+        System.arraycopy(input_permuted, 32, right, 0, 32);
+        int[][] keys = generateKeys(key);
+
+        for (int i = 15; i >= 0; i--) {
+            int[] temp = right;
+            right = xor(left, feistel(right, keys[i]));
+            left = temp;
+        }
+
+        int[] output = new int[64];
+        System.arraycopy(right, 0, output, 0, 32);
+        System.arraycopy(left, 0, output, 32, 32);
+        return permute(output, FP, 64);
+    }
+
+    public static void main(String[] args) {
+        DES des = new DES("Hello", "133457799BBCDFF1");
+
+        int[] encrypted = des.encrypt();
+        System.out.print("Encrypted: ");
+        for (int bit : encrypted) {
+            System.out.print(bit);
+        }
+        System.out.println();
+
+        des.input = encrypted;
+        int[] decrypted = des.decrypt();
+        System.out.print("Decrypted: ");
+        for (int bit : decrypted) {
+            System.out.print(bit);
+        }
+        System.out.println();
+        System.out.println(binaryArrayToString(decrypted));
     }
 }
