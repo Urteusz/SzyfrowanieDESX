@@ -1,63 +1,92 @@
 import java.math.BigInteger;
+import java.util.Arrays;
 
 public class DES {
-    private int[] input;
-    private int[] key;
+    private boolean[] key = new boolean[64];
+    private boolean[][] input;
 
-    public DES(String input, String k) {
-        this.key = hexToBinaryArray(k);
-        this.input = stringToBinaryArray(input);
+    public DES(String input_string, String k) {
+        inputCutter(input_string);
+        for (int i = 0; i < 64; i++) {
+            key[i] = i % 2 != 0;
+        }
     }
 
-    public static int[] hexToBinaryArray(String hexString) {
-        String binaryString = new BigInteger(hexString, 16).toString(2);
 
-        while (binaryString.length() % 8 != 0) {
-            binaryString = "0" + binaryString;
+    public void inputCutter(String input) {
+        StringBuilder final_input = new StringBuilder();
+
+        int j=0;
+        // Dodaj padding, jeśli długość nie jest wielokrotnością 8
+        input = padInput(input);
+        int blocks = input.length() / 8;
+        this.input = new boolean[blocks][64];
+
+        for (int i = 0; i < input.length(); i += 8) {
+
+            String input_cut = input.substring(i, Math.min(i + 8, input.length()));
+            this.input[j] = stringToBoolean(input_cut);
+            j++;
         }
-
-        int[] binaryArray = new int[binaryString.length()];
-        for (int i = 0; i < binaryString.length(); i++) {
-            binaryArray[i] = Character.getNumericValue(binaryString.charAt(i));
-        }
-
-        return binaryArray;
     }
 
-    public static int[] stringToBinaryArray(String input) {
-        int[] bitArray = new int[64];
+    private String padInput(String input) {
+        // PKCS7 Padding
+        int padLength = 8 - input.length() % 8;
+
+        StringBuilder paddedInput = new StringBuilder(input);
+        for (int i = input.length(); i < input.length()+padLength; i++) {
+            paddedInput.append((char) 0);
+        }
+
+        return paddedInput.toString();
+    }
+
+    public boolean[] stringToBoolean(String input) {
+        // Zakładamy, że chcemy przechować maksymalnie 8 znaków (8 * 8 = 64 bity)
+        boolean[] bitArray = new boolean[64];
 
         // Konwersja każdego znaku na jego reprezentację binarną
-        for (int i = 0; i < Math.min(input.length(), 8); i++) {
-            char c = input.charAt(i);
-
-            // Konwersja znaku na 8 bitów
-            for (int j = 0; j < 8; j++) {
-                bitArray[i * 8 + j] = (c >> (7 - j)) & 1;
+        for (int i = 0; i < 8; i++) {
+            if(i<=input.length()-1){
+                char c = input.charAt(i);
+                for (int j = 0; j < 8; j++) {
+                    bitArray[i * 8 + j] = ((c >> (7 - j)) & 1) == 1;  // Sprawdzanie każdego bitu
+                }
+            }
+            else {
+                for(int j=0; j<8; j++){
+                    bitArray[i*8+j] = false;
+                }
             }
         }
 
         return bitArray;
     }
-    public static String binaryArrayToString(int[] bitArray) {
-        StringBuilder result = new StringBuilder();
 
-        // Przetwarzamy tablicę po 8 bitów (1 znak ASCII)
-        for (int i = 0; i < 64; i += 8) {
-            int asciiValue = 0;
+    public static String BooleanArrayToHex(boolean[] tablica) {
+        StringBuilder hex = new StringBuilder();
+        int byteValue = 0;
+        int count = 0;
 
-            // Konwersja 8 bitów na wartość dziesiętną
-            for (int j = 0; j < 8; j++) {
-                asciiValue = (asciiValue << 1) | bitArray[i + j];
+        for (boolean b : tablica) {
+            if (b) {
+                byteValue |= (1 << (7 - count));
             }
+            count++;
 
-            // Dodajemy znak do wynikowego ciągu
-            result.append((char) asciiValue);
+            if (count == 8) {
+                hex.append(String.format("%02X", byteValue));
+                byteValue = 0;
+                count = 0;
+            }
+        }
+        if (count > 0) {
+            hex.append(String.format("%02X", byteValue));
         }
 
-        return result.toString();
+        return hex.toString();
     }
-
 
 
     private static final int[] IP = {
@@ -190,16 +219,16 @@ public class DES {
             }
     };
 
-    private int[] permute(int[] input, int[] table, int size) {
-        int [] output = new int[size];
+    private boolean[] permute(boolean[] input, int[] table, int size) {
+        boolean[] output = new boolean[size];
         for (int i = 0; i < size; i++) {
             output[i] = input[table[i] - 1];
         }
         return output;
     }
 
-    private int[] leftShift(int[] input, int shifts){
-        int[] output = new int[input.length];
+    private boolean[] leftShift(boolean[] input, int shifts) {
+        boolean[] output = new boolean[input.length];
         for (int i = 0; i < input.length - shifts; i++) {
             output[i] = input[i + shifts];
         }
@@ -209,52 +238,62 @@ public class DES {
         return output;
     }
 
-    private int[][] generateKeys(int[] key){
-        int[] permutedKey = permute(key, PC1,56);
-        int[] left = new int[28];
-        int[] right = new int[28];
-        System.arraycopy(permutedKey,0,left,0,28);
-        System.arraycopy(permutedKey,28,right,0,28);
+    private boolean[][] generateKeys(boolean[] key) {
+        boolean[] permutedKey = permute(key, PC1, 56);
+        boolean[] left = new boolean[28];
+        boolean[] right = new boolean[28];
+        System.arraycopy(permutedKey, 0, left, 0, 28);
+        System.arraycopy(permutedKey, 28, right, 0, 28);
 
-        int[][] keys = new int[16][48];
+        boolean[][] keys = new boolean[16][48];
 
-        for(int i=0;i<16;i++){
+        for (int i = 0; i < 16; i++) {
             left = leftShift(left, SHIFTS[i]);
             right = leftShift(right, SHIFTS[i]);
-            int[] combined = new int[56];
-            System.arraycopy(left,0,combined,0,28);
-            System.arraycopy(right,0,combined,28,28);
+            boolean[] combined = new boolean[56];
+            System.arraycopy(left, 0, combined, 0, 28);
+            System.arraycopy(right, 0, combined, 28, 28);
             keys[i] = permute(combined, PC2, 48);
         }
 
         return keys;
     }
 
-    private int[] feistel(int[] input, int[] key){
-        int[] extended = permute(input, E, 48);
+    private boolean[] feistel(boolean[] input, boolean[] key) {
+        // 1. Rozszerzanie wejściowego bloku do 48 bitów (permutacja)
+        boolean[] extended = permute(input, E, 48);
 
-        int[] xored = xor(extended, key);
+        // 2. Operacja XOR z kluczem
+        boolean[] xored = xor(extended, key);
 
         // 3. S-boxy (substytucja)
-        int[] sBoxOutput = new int[32];
+        boolean[] sBoxOutput = new boolean[32];  // Przechowywanie wyników 32 bitów (po S-boxach)
         int sBoxOutputIndex = 0;
 
-        for (int i = 0; i < 8; i++) { // 8 S-boxów
+        for (int i = 0; i < 8; i++) {  // 8 S-boxów
             // Pobieramy 6-bitowy fragment
-            int row = (xored[i*6] << 1) | xored[i*6 + 5]; // Pierwszy i ostatni bit to indeks wiersza
-            int col = (xored[i*6 + 1] << 3) | (xored[i*6 + 2] << 2) | (xored[i*6 + 3] << 1) | xored[i*6 + 4]; // Środkowe 4 bity to indeks kolumny
+            boolean rowBit1 = xored[i * 6];
+            boolean rowBit2 = xored[i * 6 + 5];
+            int row = (rowBit1 ? 1 : 0) << 1 | (rowBit2 ? 1 : 0);  // Pierwszy i ostatni bit to indeks wiersza
+
+            boolean colBit1 = xored[i * 6 + 1];
+            boolean colBit2 = xored[i * 6 + 2];
+            boolean colBit3 = xored[i * 6 + 3];
+            boolean colBit4 = xored[i * 6 + 4];
+            int col = (colBit1 ? 1 : 0) << 3 | (colBit2 ? 1 : 0) << 2 | (colBit3 ? 1 : 0) << 1 | (colBit4 ? 1 : 0);  // Środkowe 4 bity to indeks kolumny
 
             // Pobieramy wartość z S-boxa (od 0 do 15)
             int sBoxValue = S_BOXES[i][row][col];
 
             // Konwertujemy wartość na 4 bity i dodajemy do wyniku
             for (int j = 3; j >= 0; j--) {
-                sBoxOutput[sBoxOutputIndex++] = (sBoxValue >> j) & 1;
+                // Rozbijamy sBoxValue na 4 bity i zapisujemy je w sBoxOutput
+                sBoxOutput[sBoxOutputIndex++] = (sBoxValue >> j & 1) == 1;  // Przypisujemy boolean
             }
         }
 
-        // 4. Permutacja P
-        int[] result = new int[32];
+    // 4. Permutacja P
+        boolean[] result = new boolean[32];
         for (int i = 0; i < 32; i++) {
             result[i] = sBoxOutput[P[i] - 1]; // -1 bo indeksy w tablicy zaczynają się od 0
         }
@@ -263,82 +302,95 @@ public class DES {
 
     }
 
-    private int[] xor(int[] a, int[] b){
-        int[] result = new int[a.length];
+    private boolean[] xor(boolean[] a, boolean[] b){
+        boolean[] result = new boolean[a.length];
         for(int i=0;i<a.length;i++){
             result[i] = a[i] ^ b[i];
         }
         return result;
     }
 
-    public int[] encrypt(){
-        int[] input = this.input;
-        int[] key = this.key;
-        int[] input_permuted = permute(input, IP, 64);
-      int[] left = new int[32];
-      int[] right = new int[32];
-      System.arraycopy(input_permuted,0,left,0,32);
-      System.arraycopy(input_permuted,32,right,0,32);
-      int[][] keys = generateKeys(key);
-      for(int i=0; i<16; i++){
-          int[] temp = right;
-          right = xor(left, feistel(right, keys[i]));
-          left = temp;
-      }
-      int [] output = new int[64];
-      System.arraycopy(right,0,output,0,32);
-      System.arraycopy(left,0,output,32,32);
-      return permute(output, FP, 64);
+    public boolean[] encrypt() {
+        int blocks = this.input.length;
+        boolean [] output = new boolean[64];
+        boolean[] output_cut;
+        boolean[][] output_whole = new boolean[blocks][64];
+        for(int x=0;x<blocks;x++)
+        {
+            boolean[] input_x = this.input[x];
+            boolean[] input_permuted = permute(input_x, IP, 64);
+            boolean[] left = new boolean[32];
+            boolean[] right = new boolean[32];
+            System.arraycopy(input_permuted,0,left,0,32);
+            System.arraycopy(input_permuted,32,right,0,32);
+            boolean[][] keys = generateKeys(this.key);
+            for(int i=0; i<16; i++){
+                boolean[] temp = right;
+                right = xor(left, feistel(right, keys[i]));
+                left = temp;
+            }
+
+            System.arraycopy(right,0,output,0,32);
+            System.arraycopy(left,0,output,32,32);
+            output_cut = permute(output, FP, 64);
+            output_whole[x] = output_cut;
+        }
+        boolean[] finalOutput = new boolean[blocks * 64];
+        int currentIndex = 0;
+
+        for (boolean[] blockOutput : output_whole) {
+            System.arraycopy(blockOutput, 0, finalOutput, currentIndex, 64);
+            currentIndex += 64;
+        }
+
+        return finalOutput;
     }
 
 
-//    public static void main(String[] args) {
-//        DES des = new DES();
-//        int[] output = des.encrypt();
-//        for (int i = 0; i < 64; i++) {
-//            System.out.print(output[i]);
+//    public boolean[] decrypt() {
+//        int blocks = this.input.length;
+//        for(int x = 0; x<blocks; x++){
+//            boolean[] input_cut = this.input[x];
+//            boolean[] input_permuted = permute(input_cut, IP, 64);
+//            boolean[] left = new boolean[32];
+//            boolean[] right = new boolean[32];
+//            System.arraycopy(input_permuted, 0, left, 0, 32);
+//            System.arraycopy(input_permuted, 32, right, 0, 32);
+//            boolean[][] keys = generateKeys(key);
+//
+//            for (int i = 15; i >= 0; i--) {
+//                boolean[] temp = right;
+//                right = xor(left, feistel(right, keys[i]));
+//                left = temp;
+//            }
+//
+//            boolean[] output = new boolean[64];
+//            System.arraycopy(right, 0, output, 0, 32);
+//            System.arraycopy(left, 0, output, 32, 32);
+//
 //        }
-//        System.out.println();
+//        return permute(output, FP, 64);
 //    }
 
-
-    public int[] decrypt() {
-        int[] input_permuted = permute(input, IP, 64);
-        int[] left = new int[32];
-        int[] right = new int[32];
-        System.arraycopy(input_permuted, 0, left, 0, 32);
-        System.arraycopy(input_permuted, 32, right, 0, 32);
-        int[][] keys = generateKeys(key);
-
-        for (int i = 15; i >= 0; i--) {
-            int[] temp = right;
-            right = xor(left, feistel(right, keys[i]));
-            left = temp;
+    public static void printBooleanArray(boolean[] array) {
+        for (boolean b : array) {
+            System.out.print(b ? 1 : 0);
         }
-
-        int[] output = new int[64];
-        System.arraycopy(right, 0, output, 0, 32);
-        System.arraycopy(left, 0, output, 32, 32);
-        return permute(output, FP, 64);
+        System.out.println();
     }
 
     public static void main(String[] args) {
-        DES des = new DES("Hello", "133457799BBCDFF1");
-
-        int[] encrypted = des.encrypt();
+        DES des = new DES("hellohellohello","");
+        boolean[] encrypted = des.encrypt();
+        System.out.println("key:" + BooleanArrayToHex(des.key));
         System.out.print("Encrypted: ");
-        for (int bit : encrypted) {
-            System.out.print(bit);
-        }
-        System.out.println();
-
-        des.input = encrypted;
-        int[] decrypted = des.decrypt();
-        System.out.print("Decrypted: ");
-        for (int bit : decrypted) {
-            System.out.print(bit);
-        }
-        System.out.println();
-        System.out.println(binaryArrayToString(decrypted));
+        printBooleanArray(encrypted);
+        System.out.println(BooleanArrayToHex(encrypted));
+//
+//        des.input = encrypted;
+//        boolean[] decrypted = des.decrypt();
+//        System.out.print("Decrypted: ");
+//        printBooleanArray(encrypted);
+//        System.out.println(BooleanArrayToHex(decrypted));
     }
 }
