@@ -346,6 +346,42 @@ public class DES {
         return finalOutput;
     }
 
+    public boolean[] decrypt(boolean[] encrypted) {
+        int blocks = encrypted.length / 64;
+        boolean[][] encryptedBlocks = new boolean[blocks][64];
+        for (int i = 0; i < blocks; i++) {
+            System.arraycopy(encrypted, i * 64, encryptedBlocks[i], 0, 64);
+        }
+        boolean[][] outputWhole = new boolean[blocks][64];
+        for (int x = 0; x < blocks; x++) {
+            boolean[] input_cut = encryptedBlocks[x];
+            boolean[] input_permuted = permute(input_cut, IP, 64);
+            boolean[] left = new boolean[32];
+            boolean[] right = new boolean[32];
+            System.arraycopy(input_permuted, 0, left, 0, 32);
+            System.arraycopy(input_permuted, 32, right, 0, 32);
+            boolean[][] keys = generateKeys(key);
+            for (int i = 15; i >= 0; i--) {
+                boolean[] temp = right;
+                right = xor(left, feistel(right, keys[i]));
+                left = temp;
+            }
+            boolean[] output = new boolean[64];
+            System.arraycopy(right, 0, output, 0, 32);
+            System.arraycopy(left, 0, output, 32, 32);
+
+            outputWhole[x] = permute(output, FP, 64);
+        }
+        boolean[] finalOutput = new boolean[blocks * 64];
+        int currentIndex = 0;
+        for (boolean[] blockOutput : outputWhole) {
+            System.arraycopy(blockOutput, 0, finalOutput, currentIndex, 64);
+            currentIndex += 64;
+        }
+        return finalOutput;
+    }
+
+
 
 //    public boolean[] decrypt() {
 //        int blocks = this.input.length;
@@ -379,18 +415,26 @@ public class DES {
         System.out.println();
     }
 
-    public static void main(String[] args) {
-        DES des = new DES("hellohellohello","");
-        boolean[] encrypted = des.encrypt();
-        System.out.println("key:" + BooleanArrayToHex(des.key));
-        System.out.print("Encrypted: ");
-        printBooleanArray(encrypted);
-        System.out.println(BooleanArrayToHex(encrypted));
-//
-//        des.input = encrypted;
-//        boolean[] decrypted = des.decrypt();
-//        System.out.print("Decrypted: ");
-//        printBooleanArray(encrypted);
-//        System.out.println(BooleanArrayToHex(decrypted));
+    public static String hexToText(String hex) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hex.length(); i += 2) {
+            String str = hex.substring(i, i + 2);
+            sb.append((char) Integer.parseInt(str, 16));
+        }
+        return sb.toString();
     }
+
+//    public static void main(String[] args) {
+//        DES des = new DES("hellohellohello","");
+//        boolean[] encrypted = des.encrypt();
+//        System.out.println("key:" + BooleanArrayToHex(des.key));
+//        System.out.print("Encrypted: ");
+//        printBooleanArray(encrypted);
+//        System.out.println(BooleanArrayToHex(encrypted));
+//
+//        boolean[] decrypted = des.decrypt(encrypted);
+//        System.out.print("Decrypted: ");
+//        printBooleanArray(decrypted);
+//        System.out.println(hexToText(BooleanArrayToHex(decrypted)));
+//    }
 }
