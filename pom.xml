@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>Model</module>
+        <module>View</module>
     </modules>
 
     <properties>
