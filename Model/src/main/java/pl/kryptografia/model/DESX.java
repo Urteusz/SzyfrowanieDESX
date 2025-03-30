@@ -1,19 +1,38 @@
+package pl.kryptografia.model;
+import java.security.SecureRandom;
+
 public class DESX {
     private final DES des;
     private final boolean[] k1, k2;
 
+//    Konstruktor
     public DESX(String input, String key, String k1, String k2) {
         this.des = new DES(input, key);
-        this.k1 = des.hexToBooleanArray(k1);
-        this.k2 = des.hexToBooleanArray(k2);
+        this.k1 = DES.hexToBooleanArray(k1);
+        this.k2 = DES.hexToBooleanArray(k2);
     }
 
+//    Gettery i settery
+    public DES getDes() {
+        return des;
+    }
+
+    public String getK1() {
+        return DES.BooleanArrayToHex(k1);
+    }
+
+    public String getK2() {
+        return DES.BooleanArrayToHex(k2);
+    }
+
+
+//    Encrypt i decrypt
     public String encrypt() {
         boolean[][] input = des.getInput();
         boolean[][] FirstXOR = new boolean[input.length][64];
         boolean[][] CipherDES;
         boolean[][] SecondXOR = new boolean[input.length][64];
-        int i = 0;
+        int i;
         for (i = 0; i < input.length; i++) {
             FirstXOR[i] = des.xor(input[i], k1);
         }
@@ -24,7 +43,7 @@ public class DESX {
         }
         StringBuilder result = new StringBuilder();
         for (i = 0; i < input.length; i++) {
-            result.append(des.BooleanArrayToHex(SecondXOR[i]));
+            result.append(DES.BooleanArrayToHex(SecondXOR[i]));
         }
         return result.toString();
 
@@ -33,13 +52,12 @@ public class DESX {
     public String decrypt(String encrypted) {
         int j = 0;
         int blocks = encrypted.length() / 16;
-        System.out.println(blocks);
         boolean[][] encryptedArray = new boolean[blocks][64];
 
         for (int i = 0; i < encrypted.length(); i += 16) {
 
             String input_cut = encrypted.substring(i, Math.min(i + 16, encrypted.length()));
-            encryptedArray[j] = des.hexToBooleanArray(input_cut);
+            encryptedArray[j] = DES.hexToBooleanArray(input_cut);
             j++;
         }
         boolean[][] FirstXOR = new boolean[encryptedArray.length][64];
@@ -53,17 +71,26 @@ public class DESX {
         }
         StringBuilder result = new StringBuilder();
         for(int i = 0; i < decrypted.length; i++) {
-            result.append(des.hexToText(des.BooleanArrayToHex(SecondXOR[i])));
+            result.append(DES.hexToText(DES.BooleanArrayToHex(SecondXOR[i])));
         }
         return result.toString();
     }
 
-    public static void main(String[] args) {
-        DESX desx = new DESX("Wszystko dziala ciesze sie","5555555555555555", "5555555555555555","5555555555555555");
-        String potezne_wielkie_dupsko = desx.encrypt();
-        System.out.println(potezne_wielkie_dupsko);
-        String gigantycznie_male_dupsko = desx.decrypt(potezne_wielkie_dupsko);
-        System.out.println(gigantycznie_male_dupsko);
+//    Funkcje pomocnicze
+    public void genAllKeys() {
+        SecureRandom random = new SecureRandom();
+        boolean[] desKey = new boolean[64];
+        for (int i = 0; i < 64; i++) {
+            desKey[i] = random.nextBoolean();
+        }
+        des.setKey(desKey);
+        for (int i = 0; i < 64; i++) {
+            k1[i] = random.nextBoolean();
+        }
+        for (int i = 0; i < 64; i++) {
+            k2[i] = random.nextBoolean();
+        }
     }
+
 
 }

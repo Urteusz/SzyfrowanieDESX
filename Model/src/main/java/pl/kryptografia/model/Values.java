@@ -1,3 +1,5 @@
+package pl.kryptografia.model;
+
 public class Values {
     public static final int[] IP = {
             58, 50, 42, 34, 26, 18, 10, 2,

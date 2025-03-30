@@ -1,10 +1,22 @@
+package pl.kryptografia.model;
+
 public class DES {
     private boolean[] key = new boolean[64];
     private boolean[][] input;
 
+//    Konstruktor - przekazuje input do inputCuttera aby przerobic go na tablice wielowymiarowa boolow
     public DES(String input_string, String k) {
         this.input = inputCutter(input_string);
         this.key = hexToBooleanArray(k);
+    }
+
+//    Gettery i setter
+    public String getKey() {
+        return BooleanArrayToHex(key);
+    }
+
+    public void setKey(boolean[] key) {
+        this.key = key;
     }
 
     public boolean[][] getInput() {
@@ -15,11 +27,12 @@ public class DES {
         this.input = input;
     }
 
+//    ______________________________________Funkcje pomocnicze_________________________________________________________
+
     public boolean[][] inputCutter(String input) {
         int j = 0;
         String input_old = padInput(input);
         int blocks = input_old.length() / 8;
-        System.out.println(blocks);
         boolean[][] input_new = new boolean[blocks][64];
 
         for (int i = 0; i < input.length(); i += 8) {
@@ -44,7 +57,8 @@ public class DES {
 
         return paddedInput.toString();
     }
-
+//____________________________________Przekształcenia___________________________________________________________________
+//    Różne przekształcenia ze Stringa (tekstu jawnego), tablicy Booleanów oraz wartości heksadecymalnych.
     public boolean[] stringToBoolean(String input) {
         boolean[] bitArray = new boolean[64];
 
@@ -62,6 +76,18 @@ public class DES {
         }
 
         return bitArray;
+    }
+
+    public static String hexToText(String hex) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hex.length(); i += 2) {
+            String str = hex.substring(i, i + 2);
+            char c = (char) Integer.parseInt(str, 16);
+            if (c != '\0') {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     public static String BooleanArrayToHex(boolean[] tablica) {
@@ -94,11 +120,8 @@ public class DES {
         boolean[] booleanArray = new boolean[64];
 
         for (int i = 0; i < 8; i++) {
-            // Pobierz 2 znaki hex (1 bajt)
             String byteHex = hex.substring(i * 2, i * 2 + 2);
             int byteValue = Integer.parseInt(byteHex, 16);
-
-            // Konwertuj każdy bajt na 8 bitów
             for (int j = 0; j < 8; j++) {
                 booleanArray[i * 8 + j] = ((byteValue >> (7 - j)) & 1) == 1;
             }
@@ -107,9 +130,8 @@ public class DES {
         return booleanArray;
     }
 
-
-
-
+//    _________________________________Algorytm DES_____________________________________________________________________
+//    Operacje algorytmu DES
     private boolean[] permute(boolean[] input, int[] table, int size) {
         boolean[] output = new boolean[size];
         for (int i = 0; i < size; i++) {
@@ -163,18 +185,7 @@ public class DES {
 
         for (int i = 0; i < 8; i++) {  // 8 S-boxów
             // Pobieramy 6-bitowy fragment
-            boolean rowBit1 = xored[i * 6];
-            boolean rowBit2 = xored[i * 6 + 5];
-            int row = (rowBit1 ? 1 : 0) << 1 | (rowBit2 ? 1 : 0);  // Pierwszy i ostatni bit to indeks wiersza
-
-            boolean colBit1 = xored[i * 6 + 1];
-            boolean colBit2 = xored[i * 6 + 2];
-            boolean colBit3 = xored[i * 6 + 3];
-            boolean colBit4 = xored[i * 6 + 4];
-            int col = (colBit1 ? 1 : 0) << 3 | (colBit2 ? 1 : 0) << 2 | (colBit3 ? 1 : 0) << 1 | (colBit4 ? 1 : 0);  // Środkowe 4 bity to indeks kolumny
-
-            // Pobieramy wartość z S-boxa (od 0 do 15)
-            int sBoxValue = Values.S_BOXES[i][row][col];
+            int sBoxValue = getSBoxValue(xored, i);
 
             // Konwertujemy wartość na 4 bity i dodajemy do wyniku
             for (int j = 3; j >= 0; j--) {
@@ -191,6 +202,22 @@ public class DES {
 
         return result;
 
+    }
+
+    private static int getSBoxValue(boolean[] xored, int i) {
+        boolean rowBit1 = xored[i * 6];
+        boolean rowBit2 = xored[i * 6 + 5];
+        int row = (rowBit1 ? 1 : 0) << 1 | (rowBit2 ? 1 : 0);  // Pierwszy i ostatni bit to indeks wiersza
+
+        boolean colBit1 = xored[i * 6 + 1];
+        boolean colBit2 = xored[i * 6 + 2];
+        boolean colBit3 = xored[i * 6 + 3];
+        boolean colBit4 = xored[i * 6 + 4];
+        int col = (colBit1 ? 1 : 0) << 3 | (colBit2 ? 1 : 0) << 2 | (colBit3 ? 1 : 0) << 1 | (colBit4 ? 1 : 0);  // Środkowe 4 bity to indeks kolumny
+
+        // Pobieramy wartość z S-boxa (od 0 do 15)
+        int sBoxValue = Values.S_BOXES[i][row][col];
+        return sBoxValue;
     }
 
     public boolean[] xor(boolean[] a, boolean[] b) {
@@ -254,23 +281,5 @@ public class DES {
     }
 
 
-    public static void printBooleanArray(boolean[] array) {
-        for (boolean b : array) {
-            System.out.print(b ? 1 : 0);
-        }
-        System.out.println();
-    }
 
-    public static String hexToText(String hex) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hex.length(); i += 2) {
-            String str = hex.substring(i, i + 2);
-            char c = (char) Integer.parseInt(str, 16);
-            // Dodaj znak tylko, jeśli nie jest to znak null ('\0')
-            if (c != '\0') {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
 }
