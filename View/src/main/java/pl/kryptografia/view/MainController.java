@@ -167,7 +167,6 @@ public class MainController implements Initializable {
             alert.setHeaderText("Niepoprawne klucze");
             alert.setContentText("Każdy klucz musi mieć długość 16 znaków.");
             alert.showAndWait();
-            return;
         }
         else {
             desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
@@ -177,9 +176,6 @@ public class MainController implements Initializable {
             desxObject.getDes().setInput(desxObject.getDes().inputCutter(plainText));
             areaEncrypted.setText(desxObject.encrypt());
         }
-
-
-
     }
 
 
@@ -192,11 +188,12 @@ public class MainController implements Initializable {
             alert.setHeaderText("Niepoprawny tekst");
             alert.setContentText("Tekst musi być w formacie ASCII.");
             alert.showAndWait();
-            return;
+        }
+        else {
+            String encryptedText = areaEncrypted.getText();
+            areaPlain.setText(desxObject.decrypt(encryptedText));
         }
 
-        String encryptedText = areaEncrypted.getText();
-        areaPlain.setText(desxObject.decrypt(encryptedText));
     }
 
     @Override
