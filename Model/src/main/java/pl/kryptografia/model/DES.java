@@ -172,9 +172,9 @@ public class DES {
         return keys;
     }
 
-    private boolean[] feistel(boolean[] input, boolean[] key) {
+    private boolean[] feistel(boolean[] input_right, boolean[] key) {
         // 1. Rozszerzanie wejściowego bloku do 48 bitów (permutacja)
-        boolean[] extended = permute(input, Values.E, 48);
+        boolean[] extended = permute(input_right, Values.E, 48);
 
         // 2. Operacja XOR z kluczem
         boolean[] xored = xor(extended, key);
@@ -195,10 +195,8 @@ public class DES {
         }
 
         // 4. Permutacja P
-        boolean[] result = new boolean[32];
-        for (int i = 0; i < 32; i++) {
-            result[i] = sBoxOutput[Values.P[i] - 1]; // -1 bo indeksy w tablicy zaczynają się od 0
-        }
+        boolean[] result;
+        result = permute(sBoxOutput, Values.P,32);
 
         return result;
 
