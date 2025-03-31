@@ -301,10 +301,8 @@ public class DES {
         }
 
         // 4. Permutacja P
-        boolean[] result = new boolean[32];
-        for (int i = 0; i < 32; i++) {
-            result[i] = sBoxOutput[Values.P[i] - 1];
-        }
+        boolean[] result;
+        result = permute(sBoxOutput, Values.P, 32);
 
         return result;
     }
