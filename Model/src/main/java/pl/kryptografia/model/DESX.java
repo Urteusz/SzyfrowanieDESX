@@ -3,7 +3,8 @@ import java.security.SecureRandom;
 
 public class DESX {
     private final DES des;
-    private final boolean[] k1, k2;
+    private boolean[] k1;
+    private boolean[] k2;
 
 //    Konstruktor
     public DESX(String input, String key, String k1, String k2) {
@@ -25,6 +26,12 @@ public class DESX {
         return DES.BooleanArrayToHex(k2);
     }
 
+    public void setk1(String k1) {
+        this.k1 = DES.hexToBooleanArray(k1);
+    }
+    public void setk2(String k2) {
+        this.k2 = DES.hexToBooleanArray(k2);
+    }
 
 //    Encrypt i decrypt
     public String encrypt() {

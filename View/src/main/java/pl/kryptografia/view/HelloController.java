@@ -114,10 +114,11 @@ public class HelloController implements Initializable {
     @FXML
     private void saveEncryptedClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Zapisz plik");
-
         File file = fileChooser.showSaveDialog(new Stage());
-
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
+        );
+        fileChooser.setTitle("Zapisz plik");
         if (file != null){
             try {
                 Files.writeString(Path.of(file.getAbsolutePath()), areaEncrypted.getText());
@@ -131,9 +132,26 @@ public class HelloController implements Initializable {
 
     @FXML
     private void onEncryptClick() {
-        String plainText = areaPlain.getText();
-        desxObject.getDes().setInput(desxObject.getDes().inputCutter(plainText));
-        areaEncrypted.setText(desxObject.encrypt());
+        String key1 = keyOne.getText();
+        String key2 = keyTwo.getText();
+        String key3 = keyThree.getText();
+        if (key1.length() != 16 || key2.length() != 16 || key3.length() != 16) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Błąd");
+            alert.setHeaderText("Niepoprawne klucze");
+            alert.setContentText("Każdy klucz musi mieć długość 16 znaków.");
+            alert.showAndWait();
+            return;
+        }
+        else {
+            desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
+            desxObject.setk1(key2);
+            desxObject.setk2(key3);
+            String plainText = areaPlain.getText();
+            desxObject.getDes().setInput(desxObject.getDes().inputCutter(plainText));
+            areaEncrypted.setText(desxObject.encrypt());
+        }
+
 
 
     }
