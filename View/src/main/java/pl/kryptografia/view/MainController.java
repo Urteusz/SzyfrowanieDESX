@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.fxml.FXML;
@@ -165,25 +168,27 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        this.desxObject = new DESX("","5555555555555555", "5555555555555555","5555555555555555");
+        this.desxObject = new DESX("", "5555555555555555", "5555555555555555", "5555555555555555");
         updateText();
-        keyOne.textProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.length() > 16) {
-                keyOne.setText(oldValue);
-            }
-        });
-        keyTwo.textProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.length() > 16) {
-                keyTwo.setText(oldValue);
-            }
-        });
-        keyThree.textProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue.length() > 16) {
-                keyThree.setText(oldValue);
-            }
-        });
 
+        ChangeListener<String> hexValidatorKey = (observable, oldValue, newValue) -> {
+            if (newValue.length() > 16 || !newValue.matches("[0-9A-Fa-f]*")) {
+                ((TextField) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
+            }
+        };
+
+        ChangeListener<String> hexValidator = (observable, oldValue, newValue) -> {
+            if (!newValue.matches("[0-9A-Fa-f]*")) {
+                ((TextArea) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
+            }
+        };
+
+        keyOne.textProperty().addListener(hexValidatorKey);
+        keyTwo.textProperty().addListener(hexValidatorKey);
+        keyThree.textProperty().addListener(hexValidatorKey);
+        areaEncrypted.textProperty().addListener(hexValidator);
     }
+
 
 
     public void updateText(){
