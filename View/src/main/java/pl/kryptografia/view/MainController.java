@@ -148,6 +148,16 @@ public class MainController implements Initializable {
 
     @FXML
     private void onEncryptClick() {
+
+        if(!isAscii(areaPlain.getText())){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Błąd");
+            alert.setHeaderText("Niepoprawny tekst");
+            alert.setContentText("Tekst musi być w formacie ASCII.");
+            alert.showAndWait();
+            return;
+        }
+
         String key1 = keyOne.getText();
         String key2 = keyTwo.getText();
         String key3 = keyThree.getText();
@@ -175,6 +185,16 @@ public class MainController implements Initializable {
 
     @FXML
     private void onDecryptClick() {
+
+        if(!isAscii(areaEncrypted.getText())){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Błąd");
+            alert.setHeaderText("Niepoprawny tekst");
+            alert.setContentText("Tekst musi być w formacie ASCII.");
+            alert.showAndWait();
+            return;
+        }
+
         String encryptedText = areaEncrypted.getText();
         areaPlain.setText(desxObject.decrypt(encryptedText));
     }
@@ -190,16 +210,9 @@ public class MainController implements Initializable {
             }
         };
 
-        ChangeListener<String> hexValidator = (observable, oldValue, newValue) -> {
-            if (!newValue.matches("[0-9A-Fa-f]*")) {
-                ((TextArea) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
-            }
-        };
-
         keyOne.textProperty().addListener(hexValidatorKey);
         keyTwo.textProperty().addListener(hexValidatorKey);
         keyThree.textProperty().addListener(hexValidatorKey);
-        areaEncrypted.textProperty().addListener(hexValidator);
     }
 
 
@@ -209,4 +222,16 @@ public class MainController implements Initializable {
         keyTwo.setText(desxObject.getK1());
         keyThree.setText(desxObject.getK2());
     }
+
+    private boolean isAscii(String text) {
+        for (char c : text.toCharArray()) {
+            if (c > 127) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+
 }
