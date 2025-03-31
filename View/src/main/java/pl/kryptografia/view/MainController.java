@@ -61,7 +61,11 @@ public class MainController implements Initializable {
     @FXML
     private void openFileClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik");
+        fileChooser.setTitle("Wybierz plik TXT");
+
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
+        );
 
         File file = fileChooser.showOpenDialog(new Stage());
 
@@ -80,10 +84,13 @@ public class MainController implements Initializable {
     @FXML
     private void saveFileClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Zapisz plik");
+
+        fileChooser.setTitle("Zapisz plik TXT");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
+        );
 
         File file = fileChooser.showSaveDialog(new Stage());
-
         if (file != null){
             try {
                 Files.writeString(Path.of(file.getAbsolutePath()), areaPlain.getText());
@@ -98,7 +105,11 @@ public class MainController implements Initializable {
     @FXML
     private void openEncryptedClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik");
+        fileChooser.setTitle("Wybierz plik TXT");
+
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
+        );
 
         File file = fileChooser.showOpenDialog(new Stage());
 
@@ -117,11 +128,13 @@ public class MainController implements Initializable {
     @FXML
     private void saveEncryptedClick() {
         FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showSaveDialog(new Stage());
+
+        fileChooser.setTitle("Zapisz plik TXT");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
         );
-        fileChooser.setTitle("Zapisz plik");
+
+        File file = fileChooser.showSaveDialog(new Stage());
         if (file != null){
             try {
                 Files.writeString(Path.of(file.getAbsolutePath()), areaEncrypted.getText());
