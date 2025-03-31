@@ -16,7 +16,7 @@ import pl.kryptografia.model.*;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class HelloController implements Initializable {
+public class MainController implements Initializable {
 
     DESX desxObject;
 

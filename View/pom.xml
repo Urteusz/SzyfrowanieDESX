@@ -103,7 +103,7 @@
           <execution>
             <id>default-cli</id>
             <configuration>
-              <mainClass>pl.kryptografia.view.HelloApplication</mainClass>
+              <mainClass>pl.kryptografia.view.MainApplication</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
