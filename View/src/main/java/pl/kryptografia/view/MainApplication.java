@@ -12,7 +12,7 @@ public class MainApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 720, 500);
-        stage.setTitle("DESX Encryption and Decryption");
+        stage.setTitle("DESX Encryption and Decryption Tool");
         stage.setScene(scene);
         stage.show();
     }
