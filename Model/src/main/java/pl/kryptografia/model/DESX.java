@@ -77,7 +77,7 @@ public class DESX {
      *
      * @return Zaszyfrowany tekst w formacie szesnastkowym
      */
-    public String encrypt() {
+    public boolean[][] encrypt() {
         // Pobranie bloków tekstowych z obiektu DES
         boolean[][] input = des.getInput();
         // Tablica na wyniki operacji pre-whitening (XOR z k1)
@@ -94,20 +94,14 @@ public class DESX {
 
         // Ustawienie wyników pre-whitening jako dane wejściowe dla DES
         des.setInput(FirstXOR);
-        // Szyfrowanie DES
+        System.out.println(FirstXOR.length);
         CipherDES = des.encrypt();
 
         // Post-whitening: XOR każdego zaszyfrowanego bloku z kluczem k2
         for (int i = 0; i < input.length; i++) {
             SecondXOR[i] = des.xor(CipherDES[i], k2);
         }
-
-        // Konwersja zaszyfrowanych bloków na ciąg szesnastkowy
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < input.length; i++) {
-            result.append(DES.BooleanArrayToHex(SecondXOR[i]));
-        }
-        return result.toString();
+        return SecondXOR;
     }
 
     /**
@@ -119,24 +113,16 @@ public class DESX {
      * @param encrypted Zaszyfrowany tekst w formacie szesnastkowym
      * @return Odszyfrowany tekst jawny
      */
-    public String decrypt(String encrypted) {
+    public boolean[][] decrypt(boolean[][] encrypted) {
         // Konwersja szesnastkowego szyfrogramu na bloki bitowe
         int j = 0;
         // Obliczenie liczby bloków 64-bitowych (16 znaków hex = 8 bajtów = 64 bity)
-        int blocks = encrypted.length() / 16;
-        boolean[][] encryptedArray = new boolean[blocks][64];
-
-        // Przetwarzanie ciągu szesnastkowego na bloki 64-bitowe
-        for (int i = 0; i < encrypted.length(); i += 16) {
-            String input_cut = encrypted.substring(i, Math.min(i + 16, encrypted.length()));
-            encryptedArray[j] = DES.hexToBooleanArray(input_cut);
-            j++;
-        }
+        int blocks = encrypted.length;
 
         // Odwrócenie post-whiteningu: XOR każdego bloku z kluczem k2
-        boolean[][] FirstXOR = new boolean[encryptedArray.length][64];
-        for(int i = 0; i < encryptedArray.length; i++) {
-            FirstXOR[i] = des.xor(encryptedArray[i], k2);
+        boolean[][] FirstXOR = new boolean[blocks][64];
+        for(int i = 0; i < blocks; i++) {
+            FirstXOR[i] = des.xor(encrypted[i], k2);
         }
 
         // Deszyfrowanie DES
@@ -147,13 +133,7 @@ public class DESX {
         for(int i = 0; i < decrypted.length; i++) {
             SecondXOR[i] = des.xor(decrypted[i], k1);
         }
-
-        // Konwersja bitów na tekst
-        StringBuilder result = new StringBuilder();
-        for(int i = 0; i < decrypted.length; i++) {
-            result.append(DES.hexToText(DES.BooleanArrayToHex(SecondXOR[i])));
-        }
-        return result.toString();
+        return SecondXOR;
     }
 
     /**

@@ -50,7 +50,7 @@ public class DES {
      * @param input Tekst jawny
      * @return Tablica bloków bitowych
      */
-    public boolean[][] inputCutter(String input) {
+    public static boolean[][] inputCutter(String input) {
         int j = 0;
         // Uzupełnienie tekstu do wielokrotności 8 bajtów
         String input_old = padInput(input);
@@ -73,7 +73,7 @@ public class DES {
      * @param input Tekst wejściowy
      * @return Uzupełniony tekst
      */
-    private String padInput(String input) {
+    private static String padInput(String input) {
         // Sprawdzenie czy tekst ma już odpowiednią długość
         if (input.length() % 8 == 0) {
             return input;
@@ -98,7 +98,7 @@ public class DES {
      * @param input Ciąg znaków (maks. 8)
      * @return 64-bitowa reprezentacja wejścia
      */
-    public boolean[] stringToBoolean(String input) {
+    public static boolean[] stringToBoolean(String input) {
         boolean[] bitArray = new boolean[64];
 
         // Konwersja każdego znaku na 8 bitów

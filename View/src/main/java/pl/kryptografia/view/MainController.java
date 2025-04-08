@@ -17,11 +17,16 @@ import pl.kryptografia.model.*;
 
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
 
     DESX desxObject;
+    boolean[][] plainData;
+    boolean[][] encryptedData;
+    String encryptedDataString;
 
     @FXML
     private TextField keyOne;
@@ -45,10 +50,13 @@ public class MainController implements Initializable {
     private TextField textOpenEncrypted;
 
     @FXML
-    private TextField textSavePlain;
+    private TextField textSaveEncrypted;
 
     @FXML
-    private TextField textSaveEncrypted;
+    private RadioButton radioFile;
+
+    @FXML
+    private RadioButton radioText;
 
     @FXML
     private void onGenerateKeysClick() {
@@ -61,55 +69,31 @@ public class MainController implements Initializable {
     @FXML
     private void openFileClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik TXT");
-
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
-        );
+        fileChooser.setTitle("Wybierz plik");
 
         File file = fileChooser.showOpenDialog(new Stage());
 
-        if (file != null){
+        if (file != null) {
             try {
-                String content = Files.readString(Path.of(file.getAbsolutePath()));
+                // Read boolean array from file
+                plainData = readBooleanArrayFromFile(file);
+                desxObject.getDes().setInput(plainData);
                 textOpenPlain.setText(file.getAbsolutePath());
-                areaPlain.setText(content);
-            } catch (IOException e){
+
+                // Display representation in text area
+                areaPlain.setText("Plik zostal wczytany pomyslnie");
+            } catch (IOException e) {
 
             }
         }
     }
 
-
-    @FXML
-    private void saveFileClick() {
-        FileChooser fileChooser = new FileChooser();
-
-        fileChooser.setTitle("Zapisz plik TXT");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
-        );
-
-        File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null){
-            try {
-                Files.writeString(Path.of(file.getAbsolutePath()), areaPlain.getText());
-                textSavePlain.setText(file.getAbsolutePath());
-            } catch (IOException e){
-
-            }
-        }
-
-    }
 
     @FXML
     private void openEncryptedClick() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Wybierz plik TXT");
 
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
-        );
 
         File file = fileChooser.showOpenDialog(new Stage());
 
@@ -124,30 +108,61 @@ public class MainController implements Initializable {
         }
     }
 
-
-    @FXML
-    private void saveEncryptedClick() {
+    private void saveFile(boolean[][] data) {
         FileChooser fileChooser = new FileChooser();
-
-        fileChooser.setTitle("Zapisz plik TXT");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Plik tekstowy", "*.txt")
-        );
+        fileChooser.setTitle("Zapisz plik PDF");
 
         File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null){
+        if (file != null) {
             try {
-                Files.writeString(Path.of(file.getAbsolutePath()), areaEncrypted.getText());
+                byte[] bytes = convertBitsToBytes(data);
+                Files.write(file.toPath(), bytes);
                 textSaveEncrypted.setText(file.getAbsolutePath());
-            } catch (IOException e){
-
+            } catch (IOException e) {
+                e.printStackTrace(); // dodaj logowanie błędu
             }
         }
-
     }
 
     @FXML
+    private void savePlainClick() {
+        saveFile(plainData);
+    }
+
+    @FXML
+    private void saveEncryptedClick() {
+        saveFile(encryptedData);
+    }
+
+    // Pomocnicza metoda do konwersji boolean[][] na byte[]
+    private byte[] convertBitsToBytes(boolean[][] bits) {
+        // Spłaszcz tablicę
+        List<Boolean> flatBits = new ArrayList<>();
+        for (boolean[] row : bits) {
+            for (boolean bit : row) {
+                flatBits.add(bit);
+            }
+        }
+
+        int byteCount = (flatBits.size() + 7) / 8;
+        byte[] byteArray = new byte[byteCount];
+
+        for (int i = 0; i < flatBits.size(); i++) {
+            if (flatBits.get(i)) {
+                byteArray[i / 8] |= (1 << (7 - (i % 8)));
+            }
+        }
+
+        return byteArray;
+    }
+
+
+    @FXML
     private void onEncryptClick() {
+
+        String key1 = keyOne.getText();
+        String key2 = keyTwo.getText();
+        String key3 = keyThree.getText();
 
         if(!isAscii(areaPlain.getText())){
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -158,9 +173,6 @@ public class MainController implements Initializable {
             return;
         }
 
-        String key1 = keyOne.getText();
-        String key2 = keyTwo.getText();
-        String key3 = keyThree.getText();
         if (key1.length() != 16 || key2.length() != 16 || key3.length() != 16) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Błąd");
@@ -172,27 +184,56 @@ public class MainController implements Initializable {
             desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
             desxObject.setk1(key2);
             desxObject.setk2(key3);
-            String plainText = areaPlain.getText();
-            desxObject.getDes().setInput(desxObject.getDes().inputCutter(plainText));
-            areaEncrypted.setText(desxObject.encrypt());
         }
+        if(radioFile.isSelected())
+        {
+            if(plainData == null) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Błąd");
+                alert.setHeaderText("Brak danych");
+                alert.setContentText("Najpierw wczytaj plik przed próbą szyfrowania.");
+                alert.showAndWait();
+                return;
+            }
+            areaEncrypted.setText("Plik gotowy do zapisu.");
+            this.encryptedData = desxObject.encrypt();
+        }
+        else if(radioText.isSelected())
+        {
+            String input = areaPlain.getText();
+            desxObject.getDes().setInput(DES.inputCutter(input));
+            this.encryptedData = desxObject.encrypt();
+            StringBuilder encrypted = new StringBuilder();
+            for (int i = 0; i < encryptedData.length; i++) {
+                encrypted.append(DES.BooleanArrayToHex(encryptedData[i]));
+            }
+            this.encryptedDataString = encrypted.toString();
+            areaEncrypted.setText(encryptedDataString);
+        }
+
+
+
+
+
     }
 
 
     @FXML
     private void onDecryptClick() {
 
-        if(!isAscii(areaEncrypted.getText())){
+        String areaEncryptedText = areaEncrypted.getText();
+        if(!isAscii(areaEncryptedText)){
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Błąd");
             alert.setHeaderText("Niepoprawny tekst");
             alert.setContentText("Tekst musi być w formacie ASCII.");
             alert.showAndWait();
         }
-        else {
-            String encryptedText = areaEncrypted.getText();
-            areaPlain.setText(desxObject.decrypt(encryptedText));
+        else{
+            this.plainData = desxObject.decrypt(encryptedData);
+            areaPlain.setText("Plik zostal odszyfrowany pomyslnie");
         }
+
 
     }
 
@@ -206,6 +247,13 @@ public class MainController implements Initializable {
                 ((TextField) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
             }
         };
+
+        ToggleGroup fileOrTextGroup = new ToggleGroup();
+
+        radioFile.setToggleGroup(fileOrTextGroup);
+        radioText.setToggleGroup(fileOrTextGroup);
+
+        radioText.setSelected(true);
 
         keyOne.textProperty().addListener(hexValidatorKey);
         keyTwo.textProperty().addListener(hexValidatorKey);
@@ -229,6 +277,25 @@ public class MainController implements Initializable {
         return true;
     }
 
+    private boolean[][] readBooleanArrayFromFile(File file) throws IOException {
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+        // Calculate the number of full 64-bit blocks needed
+        int numBlocks = (int) Math.ceil(fileBytes.length * 8.0 / 64.0);
+        boolean[][] result = new boolean[numBlocks][64];
 
+        // Convert each byte to 8 bits and place in the appropriate positions
+        for (int i = 0; i < fileBytes.length; i++) {
+            byte b = fileBytes[i];
+            int blockIndex = (i * 8) / 64;  // Which 64-bit block
+            int bitOffset = (i * 8) % 64;   // Bit position within the block
 
+            // Extract 8 bits from the byte
+            for (int j = 0; j < 8; j++) {
+                if (blockIndex < numBlocks && (bitOffset + j) < 64) {
+                    result[blockIndex][bitOffset + j] = ((b >> (7 - j)) & 1) == 1;
+                }
+            }
+        }
+        return result;
+    }
 }
