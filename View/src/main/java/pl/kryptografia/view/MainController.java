@@ -3,7 +3,6 @@ package pl.kryptografia.view;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -27,6 +26,7 @@ public class MainController implements Initializable {
     boolean[][] plainData;
     boolean[][] encryptedData;
     String encryptedDataString;
+    String extensionFileName;
 
     @FXML
     private TextField keyOne;
@@ -50,6 +50,9 @@ public class MainController implements Initializable {
     private TextField textOpenEncrypted;
 
     @FXML
+    private TextField textSavePlain;
+
+    @FXML
     private TextField textSaveEncrypted;
 
     @FXML
@@ -69,18 +72,20 @@ public class MainController implements Initializable {
     @FXML
     private void openFileClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik");
+        fileChooser.setTitle("Wybierz plik do otwarcia");
 
         File file = fileChooser.showOpenDialog(new Stage());
 
         if (file != null) {
             try {
-                // Read boolean array from file
+                getFileExtension(file);
                 plainData = readBooleanArrayFromFile(file);
                 desxObject.getDes().setInput(plainData);
                 textOpenPlain.setText(file.getAbsolutePath());
+                radioFile.setSelected(true);
+                areaPlain.setDisable(true);
+                areaEncrypted.setDisable(true);
 
-                // Display representation in text area
                 areaPlain.setText("Plik zostal wczytany pomyslnie");
             } catch (IOException e) {
 
@@ -92,51 +97,86 @@ public class MainController implements Initializable {
     @FXML
     private void openEncryptedClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wybierz plik TXT");
-
+        fileChooser.setTitle("Wybierz plik do otwarcia");
 
         File file = fileChooser.showOpenDialog(new Stage());
 
         if (file != null){
             try {
-                String content = Files.readString(Path.of(file.getAbsolutePath()));
+                getFileExtension(file);
+                encryptedData = readBooleanArrayFromFile(file);
                 textOpenEncrypted.setText(file.getAbsolutePath());
-                areaEncrypted.setText(content);
+                radioFile.setSelected(true);
+                areaPlain.setDisable(true);
+                areaEncrypted.setDisable(true);
+                areaEncrypted.setText("Plik zostal wczytany pomyslnie");
             } catch (IOException _){
 
             }
         }
     }
 
-    private void saveFile(boolean[][] data) {
+    private void saveFile(boolean[][] data, int choose) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Zapisz plik PDF");
+        fileChooser.setTitle("Zapisz plik");
+
+        if(radioFile.isSelected()) {
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("*." + extensionFileName, "*." + extensionFileName)
+            );
+        }
+        else {
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("*.txt", "*.txt")
+            );
+        }
 
         File file = fileChooser.showSaveDialog(new Stage());
         if (file != null) {
             try {
-                byte[] bytes = convertBitsToBytes(data);
-                Files.write(file.toPath(), bytes);
-                textSaveEncrypted.setText(file.getAbsolutePath());
+                if(areaPlain.isDisable() || areaEncrypted.isDisable()) {
+                    byte[] bytes = convertBitsToBytes(data);
+                    Files.write(file.toPath(), bytes);
+                    if(choose == 1){
+                        textSavePlain.setText(file.getAbsolutePath());
+                    }
+                    if(choose == 2){
+                        textSaveEncrypted.setText(file.getAbsolutePath());
+                    }
+                }
+                else {
+                    if(choose == 1){
+                        String text = areaPlain.getText();
+                        Files.write(file.toPath(), text.getBytes());
+                        textSavePlain.setText(file.getAbsolutePath());
+
+                    }
+                    if(choose == 2){
+                        String text = areaPlain.getText();
+                        Files.write(file.toPath(), text.getBytes());
+                        textSaveEncrypted.setText(file.getAbsolutePath());
+                    }
+                }
+
+
             } catch (IOException e) {
-                e.printStackTrace(); // dodaj logowanie błędu
+                e.printStackTrace();
             }
         }
     }
 
     @FXML
     private void savePlainClick() {
-        saveFile(plainData);
+        saveFile(plainData, 1);
     }
 
     @FXML
     private void saveEncryptedClick() {
-        saveFile(encryptedData);
+        saveFile(encryptedData, 2);
     }
 
     // Pomocnicza metoda do konwersji boolean[][] na byte[]
     private byte[] convertBitsToBytes(boolean[][] bits) {
-        // Spłaszcz tablicę
         List<Boolean> flatBits = new ArrayList<>();
         for (boolean[] row : bits) {
             for (boolean bit : row) {
@@ -215,6 +255,22 @@ public class MainController implements Initializable {
 
 
 
+    }
+
+    @FXML
+    private void onFileRadio() {
+        areaPlain.setText("");
+        areaEncrypted.setText("");
+        areaPlain.setDisable(true);
+        areaEncrypted.setDisable(true);
+    }
+
+    @FXML
+    private void onTextRadio() {
+        areaPlain.setText("");
+        areaEncrypted.setText("");
+        areaPlain.setDisable(false);
+        areaEncrypted.setDisable(false);
     }
 
 
@@ -298,4 +354,13 @@ public class MainController implements Initializable {
         }
         return result;
     }
+
+    private void getFileExtension(File file) {
+        String name = file.getName();
+        int lastDotIndex = name.lastIndexOf('.');
+        if (lastDotIndex > 0 && lastDotIndex < name.length() - 1) {
+            this.extensionFileName = name.substring(lastDotIndex + 1).toLowerCase();
+        }
+    }
+
 }
