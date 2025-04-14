@@ -25,7 +25,6 @@ public class MainController implements Initializable {
     DESX desxObject;
     boolean[][] plainData;
     boolean[][] encryptedData;
-    String encryptedDataString;
     String extensionFileName;
 
     @FXML
@@ -88,7 +87,7 @@ public class MainController implements Initializable {
 
                 areaPlain.setText("Plik zostal wczytany pomyslnie");
             } catch (IOException e) {
-
+                showErrorAlert("Błąd odczytu pliku", e.getMessage());
             }
         }
     }
@@ -110,8 +109,8 @@ public class MainController implements Initializable {
                 areaPlain.setDisable(true);
                 areaEncrypted.setDisable(true);
                 areaEncrypted.setText("Plik zostal wczytany pomyslnie");
-            } catch (IOException _){
-
+            } catch (IOException e) {
+                showErrorAlert("Błąd odczytu pliku zaszyfrowanego", e.getMessage());
             }
         }
     }
@@ -149,18 +148,17 @@ public class MainController implements Initializable {
                         String text = areaPlain.getText();
                         Files.write(file.toPath(), text.getBytes());
                         textSavePlain.setText(file.getAbsolutePath());
-
                     }
                     if(choose == 2){
-                        String text = areaPlain.getText();
+                        // Poprawka: używamy areaEncrypted zamiast areaPlain
+                        String text = areaEncrypted.getText();
                         Files.write(file.toPath(), text.getBytes());
                         textSaveEncrypted.setText(file.getAbsolutePath());
                     }
                 }
 
-
             } catch (IOException e) {
-                e.printStackTrace();
+                showErrorAlert("Błąd zapisu pliku", e.getMessage());
             }
         }
     }
@@ -196,10 +194,8 @@ public class MainController implements Initializable {
         return byteArray;
     }
 
-
     @FXML
     private void onEncryptClick() {
-
         String key1 = keyOne.getText();
         String key2 = keyTwo.getText();
         String key3 = keyThree.getText();
@@ -238,23 +234,62 @@ public class MainController implements Initializable {
             areaEncrypted.setText("Plik gotowy do zapisu.");
             this.encryptedData = desxObject.encrypt();
         }
-        else if(radioText.isSelected())
-        {
+        else if(radioText.isSelected()) {
             String input = areaPlain.getText();
-            desxObject.getDes().setInput(DES.inputCutter(input));
+            this.plainData = DES.inputCutter(input);
+            desxObject.getDes().setInput(plainData);
             this.encryptedData = desxObject.encrypt();
             StringBuilder encrypted = new StringBuilder();
             for (int i = 0; i < encryptedData.length; i++) {
                 encrypted.append(DES.BooleanArrayToHex(encryptedData[i]));
             }
-            this.encryptedDataString = encrypted.toString();
+            String encryptedDataString = encrypted.toString();
             areaEncrypted.setText(encryptedDataString);
         }
+    }
 
+    @FXML
+    private void onDecryptClick() {
+        if(radioFile.isSelected()){
+            if(encryptedData == null) {
+                showErrorAlert("Błąd", "Najpierw wczytaj zaszyfrowany plik przed próbą odszyfrowania.");
+                return;
+            }
+            this.plainData = desxObject.decrypt(encryptedData);
+            areaPlain.setText("Plik zostal odszyfrowany pomyslnie");
+        }
+        else if(radioText.isSelected()) {
+            String input_encrypted = areaEncrypted.getText();
+            if(input_encrypted.isEmpty()) {
+                showErrorAlert("Błąd", "Brak tekstu do odszyfrowania.");
+                return;
+            }
 
+            int j = 0;
+            // Obliczenie liczby bloków 64-bitowych (16 znaków hex = 8 bajtów = 64 bity)
+            int blocks = input_encrypted.length() / 16;
+            boolean[][] encryptedArray = new boolean[blocks][64];
 
+            // Przetwarzanie ciągu szesnastkowego na bloki 64-bitowe
+            for (int i = 0; i < input_encrypted.length(); i += 16) {
+                String input_cut = input_encrypted.substring(i, Math.min(i + 16, input_encrypted.length()));
+                if(input_cut.length() < 16) {
+                    // Pad z zerami, jeśli ostatni blok jest niepełny
+                    input_cut = String.format("%-16s", input_cut).replace(' ', '0');
+                }
+                encryptedArray[j] = DES.hexToBooleanArray(input_cut);
+                j++;
+            }
 
-
+            this.encryptedData = encryptedArray;
+            this.plainData = desxObject.decrypt(encryptedData);
+            StringBuilder plain = new StringBuilder();
+            for (int i = 0; i < plainData.length; i++) {
+                plain.append(DES.hexToText(DES.BooleanArrayToHex(plainData[i])));
+            }
+            String plainDataString = plain.toString();
+            areaPlain.setText(plainDataString);
+        }
     }
 
     @FXML
@@ -273,34 +308,21 @@ public class MainController implements Initializable {
         areaEncrypted.setDisable(false);
     }
 
-
-    @FXML
-    private void onDecryptClick() {
-
-        String areaEncryptedText = areaEncrypted.getText();
-        if(!isAscii(areaEncryptedText)){
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Błąd");
-            alert.setHeaderText("Niepoprawny tekst");
-            alert.setContentText("Tekst musi być w formacie ASCII.");
-            alert.showAndWait();
-        }
-        else{
-            this.plainData = desxObject.decrypt(encryptedData);
-            areaPlain.setText("Plik zostal odszyfrowany pomyslnie");
-        }
-
-
-    }
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         this.desxObject = new DESX("", "5555555555555555", "5555555555555555", "5555555555555555");
         updateText();
+        areaPlain.setStyle("-fx-font-family: 'Arial Unicode MS', Arial, sans-serif;");
 
         ChangeListener<String> hexValidatorKey = (observable, oldValue, newValue) -> {
             if (newValue.length() > 16 || !newValue.matches("[0-9A-Fa-f]*")) {
                 ((TextField) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
+            }
+        };
+
+        ChangeListener<String> hexValidatorArea = (observable, oldValue, newValue) -> {
+            if (!newValue.matches("[0-9A-Fa-f]*")) {
+                ((TextArea) ((ReadOnlyStringProperty) observable).getBean()).setText(oldValue);
             }
         };
 
@@ -314,9 +336,8 @@ public class MainController implements Initializable {
         keyOne.textProperty().addListener(hexValidatorKey);
         keyTwo.textProperty().addListener(hexValidatorKey);
         keyThree.textProperty().addListener(hexValidatorKey);
+        areaEncrypted.textProperty().addListener(hexValidatorArea);
     }
-
-
 
     public void updateText(){
         keyOne.setText(desxObject.getDes().getKey());
@@ -363,4 +384,11 @@ public class MainController implements Initializable {
         }
     }
 
+    private void showErrorAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
 }
