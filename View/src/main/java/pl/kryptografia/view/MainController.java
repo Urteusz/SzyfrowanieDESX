@@ -85,7 +85,7 @@ public class MainController implements Initializable {
                 areaPlain.setDisable(true);
                 areaEncrypted.setDisable(true);
 
-                areaPlain.setText("Plik zostal wczytany pomyslnie");
+                areaPlain.setPromptText("Plik zostal wczytany pomyslnie");
             } catch (IOException e) {
                 showErrorAlert("Błąd odczytu pliku", e.getMessage());
             }
@@ -108,7 +108,7 @@ public class MainController implements Initializable {
                 radioFile.setSelected(true);
                 areaPlain.setDisable(true);
                 areaEncrypted.setDisable(true);
-                areaEncrypted.setText("Plik zostal wczytany pomyslnie");
+                areaEncrypted.setPromptText("Plik zostal wczytany pomyslnie");
             } catch (IOException e) {
                 showErrorAlert("Błąd odczytu pliku zaszyfrowanego", e.getMessage());
             }
@@ -138,9 +138,11 @@ public class MainController implements Initializable {
                     Files.write(file.toPath(), bytes);
                     if(choose == 1){
                         textSavePlain.setText(file.getAbsolutePath());
+                        areaPlain.setPromptText("Plik został zapisany.");
                     }
                     if(choose == 2){
                         textSaveEncrypted.setText(file.getAbsolutePath());
+                        areaEncrypted.setPromptText("Plik został zapisany.");
                     }
                 }
                 else {
@@ -150,7 +152,6 @@ public class MainController implements Initializable {
                         textSavePlain.setText(file.getAbsolutePath());
                     }
                     if(choose == 2){
-                        // Poprawka: używamy areaEncrypted zamiast areaPlain
                         String text = areaEncrypted.getText();
                         Files.write(file.toPath(), text.getBytes());
                         textSaveEncrypted.setText(file.getAbsolutePath());
@@ -216,22 +217,12 @@ public class MainController implements Initializable {
             alert.setContentText("Każdy klucz musi mieć długość 16 znaków.");
             alert.showAndWait();
         }
-        else {
-            desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
-            desxObject.setk1(key2);
-            desxObject.setk2(key3);
-        }
+        desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
+        desxObject.setk1(key2);
+        desxObject.setk2(key3);
         if(radioFile.isSelected())
         {
-            if(plainData == null) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Błąd");
-                alert.setHeaderText("Brak danych");
-                alert.setContentText("Najpierw wczytaj plik przed próbą szyfrowania.");
-                alert.showAndWait();
-                return;
-            }
-            areaEncrypted.setText("Plik gotowy do zapisu.");
+            areaEncrypted.setPromptText("Plik gotowy do zapisu.");
             this.encryptedData = desxObject.encrypt();
         }
         else if(radioText.isSelected()) {
@@ -256,7 +247,7 @@ public class MainController implements Initializable {
                 return;
             }
             this.plainData = desxObject.decrypt(encryptedData);
-            areaPlain.setText("Plik zostal odszyfrowany pomyslnie");
+            areaPlain.setPromptText("Plik zostal odszyfrowany pomyslnie");
         }
         else if(radioText.isSelected()) {
             String input_encrypted = areaEncrypted.getText();
@@ -296,6 +287,8 @@ public class MainController implements Initializable {
     private void onFileRadio() {
         areaPlain.setText("");
         areaEncrypted.setText("");
+        areaPlain.setPromptText("Otworz plik do zaszyfrowania");
+        areaEncrypted.setPromptText("Otworz zaszyfrowany plik");
         areaPlain.setDisable(true);
         areaEncrypted.setDisable(true);
     }
@@ -304,6 +297,8 @@ public class MainController implements Initializable {
     private void onTextRadio() {
         areaPlain.setText("");
         areaEncrypted.setText("");
+        areaPlain.setPromptText("Wpisz tekst do zaszyfrowania.");
+        areaEncrypted.setPromptText("Wpisz HEX do odszyfrowania.");
         areaPlain.setDisable(false);
         areaEncrypted.setDisable(false);
     }
@@ -312,7 +307,6 @@ public class MainController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         this.desxObject = new DESX("", "5555555555555555", "5555555555555555", "5555555555555555");
         updateText();
-        areaPlain.setStyle("-fx-font-family: 'Arial Unicode MS', Arial, sans-serif;");
 
         ChangeListener<String> hexValidatorKey = (observable, oldValue, newValue) -> {
             if (newValue.length() > 16 || !newValue.matches("[0-9A-Fa-f]*")) {
@@ -331,6 +325,8 @@ public class MainController implements Initializable {
         radioFile.setToggleGroup(fileOrTextGroup);
         radioText.setToggleGroup(fileOrTextGroup);
 
+        areaPlain.setPromptText("Wpisz tekst do zaszyfrowania.");
+        areaEncrypted.setPromptText("Wpisz HEX do odszyfrowania.");
         radioText.setSelected(true);
 
         keyOne.textProperty().addListener(hexValidatorKey);
