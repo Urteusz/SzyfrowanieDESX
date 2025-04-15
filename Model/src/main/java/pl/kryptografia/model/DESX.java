@@ -94,7 +94,6 @@ public class DESX {
 
         // Ustawienie wyników pre-whitening jako dane wejściowe dla DES
         des.setInput(FirstXOR);
-        System.out.println(FirstXOR.length);
         CipherDES = des.encrypt();
 
         // Post-whitening: XOR każdego zaszyfrowanego bloku z kluczem k2
