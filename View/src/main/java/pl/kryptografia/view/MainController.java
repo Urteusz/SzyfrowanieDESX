@@ -241,6 +241,12 @@ public class MainController implements Initializable {
 
     @FXML
     private void onDecryptClick() {
+        String key1 = keyOne.getText();
+        String key2 = keyTwo.getText();
+        String key3 = keyThree.getText();
+        desxObject.getDes().setKey(DES.hexToBooleanArray(key1));
+        desxObject.setk1(key2);
+        desxObject.setk2(key3);
         if(radioFile.isSelected()){
             if(encryptedData == null) {
                 showErrorAlert("Błąd", "Najpierw wczytaj zaszyfrowany plik przed próbą odszyfrowania.");
