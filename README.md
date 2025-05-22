@@ -115,6 +115,7 @@ This project is available for educational and research purposes. Please check th
 ## Authors
 
 - **Urteusz** - Initial implementation and development
+- **IgorKuna252** - Co-developer, contributed to core features and improvements
 
 ## Educational Value
 
