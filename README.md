@@ -52,7 +52,7 @@ SzyfrowanieDESX/
 
 ## Requirements
 
-- **Java**: JDK 11 or higher
+- **Java**: JDK 21 or higher
 - **JavaFX**: Included in the project dependencies
 - **Maven**: For dependency management and building
 
